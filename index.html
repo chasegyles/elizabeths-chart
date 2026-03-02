@@ -45,7 +45,7 @@
     -webkit-font-smoothing: antialiased;
   }
 
-  .container { max-width: 800px; margin: 0 auto; padding: 0 16px; }
+  .container { max-width: 800px; margin: 0 auto; padding: 0 8px; }
 
   /* Card */
   .card {
@@ -136,14 +136,14 @@
   .stats-row {
     display: grid;
     grid-template-columns: repeat(3, 1fr);
-    gap: 12px;
+    gap: 8px;
     margin-bottom: 24px;
   }
 
   .stat-card {
     border: 1px solid var(--gray-200);
     border-radius: var(--radius);
-    padding: 18px;
+    padding: 14px 10px;
     text-align: center;
   }
 
@@ -291,10 +291,14 @@
   .row-enter { animation: fadeUp 0.3s ease; }
 
   @media (max-width: 600px) {
-    .card { padding: 20px 16px; }
-    .form-grid { grid-template-columns: 1fr; }
-    .stats-row { grid-template-columns: 1fr; }
-    .att-table th, .att-table td { padding: 8px 6px; font-size: 13px; }
+    .card { padding: 16px 12px; }
+    .form-grid { grid-template-columns: 1fr 1fr; gap: 8px; }
+    .form-grid .form-group:first-child { grid-column: 1 / -1; }
+    .stats-row { gap: 6px; }
+    .stat-card { padding: 12px 6px; }
+    .stat-card-value { font-size: 22px; }
+    .stat-card-label { font-size: 10px; }
+    .att-table th, .att-table td { padding: 8px 6px; font-size: 12px; }
   }
 </style>
 </head>
@@ -303,7 +307,7 @@
 
   <!-- Entry Form -->
   <div class="card">
-    <div class="card-title">Record <span>Attendance</span></div>
+    <div class="card-title">Record Attendance</div>
     <div class="card-subtitle">Enter the date and headcount to add a new entry.</div>
     <div class="form-grid">
       <div class="form-group">
