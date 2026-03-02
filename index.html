@@ -367,33 +367,20 @@
 <div class="toast" id="toast"></div>
 
 <script>
-// === DATA STORE ===
-// Entries stored in-memory; persisted to a hidden textarea for iframe reload survival
+// ============================================================
+// CONFIG — paste your Google Apps Script Web App URL here
+// ============================================================
+const API_URL = 'https://script.google.com/macros/s/AKfycbwXgvjA79XtoGwssdZ_wqTrSF2cSKr-SCVI4u21wepd3fOhJFUt9CYFOVTqijqAWZ9qkA/exec';
+
+// ============================================================
+// State
+// ============================================================
 let entries = [];
+let isLoading = false;
 
-function saveEntries() {
-  try {
-    const el = document.getElementById('data-store');
-    if (!el) {
-      const ta = document.createElement('textarea');
-      ta.id = 'data-store';
-      ta.style.display = 'none';
-      document.body.appendChild(ta);
-    }
-    document.getElementById('data-store').value = JSON.stringify(entries);
-  } catch(e) {}
-}
-
-function loadEntries() {
-  try {
-    const el = document.getElementById('data-store');
-    if (el && el.value) {
-      entries = JSON.parse(el.value);
-    }
-  } catch(e) {}
-}
-
-// === TOAST ===
+// ============================================================
+// Toast
+// ============================================================
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
@@ -401,8 +388,26 @@ function showToast(msg) {
   setTimeout(() => t.classList.remove('show'), 2500);
 }
 
-// === ADD ENTRY ===
-function addEntry() {
+// ============================================================
+// API calls
+// ============================================================
+async function fetchEntries() {
+  try {
+    setLoading(true);
+    const resp = await fetch(API_URL);
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+    entries = data.entries || [];
+    renderTable();
+  } catch (err) {
+    showToast('Failed to load data: ' + err.message);
+    console.error(err);
+  } finally {
+    setLoading(false);
+  }
+}
+
+async function addEntry() {
   const dateVal = document.getElementById('input-date').value;
   const adultsVal = parseInt(document.getElementById('input-adults').value) || 0;
   const youthVal = parseInt(document.getElementById('input-youth').value) || 0;
@@ -410,35 +415,77 @@ function addEntry() {
   if (!dateVal) { showToast('Please select a date.'); return; }
   if (adultsVal === 0 && youthVal === 0) { showToast('Enter at least one person.'); return; }
 
-  entries.push({
-    id: Date.now(),
-    date: dateVal,
-    adults: adultsVal,
-    youth: youthVal,
-    total: adultsVal + youthVal
-  });
+  const btn = document.querySelector('.btn-submit');
+  btn.disabled = true;
+  btn.textContent = 'Saving…';
 
-  // Sort by date descending (newest first)
-  entries.sort((a, b) => b.date.localeCompare(a.date));
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' }, // Apps Script needs this for CORS
+      body: JSON.stringify({
+        id: Date.now(),
+        date: dateVal,
+        adults: adultsVal,
+        youth: youthVal
+      })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
 
-  saveEntries();
-  renderTable();
+    // Reset form
+    document.getElementById('input-adults').value = '';
+    document.getElementById('input-youth').value = '';
+    showToast('✓ Attendance recorded!');
 
-  // Reset form
-  document.getElementById('input-adults').value = '';
-  document.getElementById('input-youth').value = '';
-  showToast('✓ Attendance recorded!');
+    // Refresh data from sheet
+    await fetchEntries();
+
+  } catch (err) {
+    showToast('Failed to save: ' + err.message);
+    console.error(err);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = 'Submit Attendance →';
+  }
 }
 
-// === DELETE ENTRY ===
-function deleteEntry(id) {
-  entries = entries.filter(e => e.id !== id);
-  saveEntries();
-  renderTable();
-  showToast('Entry removed.');
+async function deleteEntry(id) {
+  if (!confirm('Delete this entry?')) return;
+
+  try {
+    const resp = await fetch(API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action: 'delete', id: id })
+    });
+    const data = await resp.json();
+    if (data.error) throw new Error(data.error);
+
+    showToast('Entry removed.');
+    await fetchEntries();
+
+  } catch (err) {
+    showToast('Failed to delete: ' + err.message);
+    console.error(err);
+  }
 }
 
-// === RENDER ===
+// ============================================================
+// Loading state
+// ============================================================
+function setLoading(loading) {
+  isLoading = loading;
+  const emptyEl = document.getElementById('empty-state');
+  if (loading && entries.length === 0) {
+    emptyEl.style.display = 'block';
+    emptyEl.innerHTML = '<div class="empty-state-icon">⏳</div>Loading attendance data…';
+  }
+}
+
+// ============================================================
+// Render
+// ============================================================
 function renderTable() {
   const tbody = document.getElementById('table-body');
   const emptyEl = document.getElementById('empty-state');
@@ -448,6 +495,7 @@ function renderTable() {
   if (entries.length === 0) {
     tbody.innerHTML = '';
     emptyEl.style.display = 'block';
+    emptyEl.innerHTML = '<div class="empty-state-icon">📋</div>No attendance records yet.';
     statsEl.style.display = 'none';
     subEl.textContent = 'No entries yet — add your first one above.';
     reportHeight();
@@ -458,7 +506,7 @@ function renderTable() {
   statsEl.style.display = 'grid';
   subEl.textContent = `${entries.length} entr${entries.length === 1 ? 'y' : 'ies'} recorded`;
 
-  // Stats: latest, average, total entries
+  // Stats
   const latest = entries[0];
   const avg = Math.round(entries.reduce((s, e) => s + e.total, 0) / entries.length);
   const highest = Math.max(...entries.map(e => e.total));
@@ -481,14 +529,14 @@ function renderTable() {
     </div>
   `;
 
-  // Table rows (sorted newest first, so "prev" for row i is row i+1)
+  // Table rows
   let html = '';
   for (let i = 0; i < entries.length; i++) {
     const e = entries[i];
-    const prev = entries[i + 1]; // next row is the previous date
+    const prev = entries[i + 1];
 
     let changeBadge = '<span class="change-badge neutral">—</span>';
-    if (prev) {
+    if (prev && prev.total > 0) {
       const pctChange = ((e.total - prev.total) / prev.total) * 100;
       const rounded = Math.round(Math.abs(pctChange));
       if (pctChange > 0) {
@@ -507,7 +555,7 @@ function renderTable() {
         <td>${e.youth}</td>
         <td class="total-cell">${e.total}</td>
         <td>${changeBadge}</td>
-        <td><button class="delete-btn" onclick="deleteEntry(${e.id})" title="Delete">×</button></td>
+        <td><button class="delete-btn" onclick="deleteEntry('${e.id}')" title="Delete">×</button></td>
       </tr>
     `;
   }
@@ -515,36 +563,43 @@ function renderTable() {
   reportHeight();
 }
 
-// === HELPERS ===
+// ============================================================
+// Helpers
+// ============================================================
 function formatDateDisplay(dateStr) {
-  // "2026-03-01" -> "Mar 1, 2026"
+  if (!dateStr) return '—';
   const [y, m, d] = dateStr.split('-');
   const dt = new Date(+y, +m - 1, +d);
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function formatDateShort(dateStr) {
+  if (!dateStr) return '—';
   const [y, m, d] = dateStr.split('-');
   const dt = new Date(+y, +m - 1, +d);
   return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
 }
 
-// === IFRAME AUTO-RESIZE ===
+// ============================================================
+// Iframe auto-resize
+// ============================================================
 function reportHeight() {
   const height = document.documentElement.scrollHeight;
   window.parent.postMessage({ type: 'resize-iframe', height: height }, '*');
 }
 
+// ============================================================
+// Init
+// ============================================================
 window.addEventListener('load', () => {
-  // Set default date to today
   const today = new Date();
   const yyyy = today.getFullYear();
   const mm = String(today.getMonth() + 1).padStart(2, '0');
   const dd = String(today.getDate()).padStart(2, '0');
   document.getElementById('input-date').value = `${yyyy}-${mm}-${dd}`;
 
-  loadEntries();
-  renderTable();
+  // Load data from Google Sheet
+  fetchEntries();
   setTimeout(reportHeight, 100);
 });
 
