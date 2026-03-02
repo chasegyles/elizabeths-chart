@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Attendance Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700;1,9..40,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    /* Logo-inspired palette: sand/earth, slate, charcoal */
+    --sand: #C4A882;
+    --sand-light: #F5EDE3;
+    --sand-hover: #B0956D;
+    --sand-dark: #8C7556;
+    --slate: #5C6B73;
+    --slate-light: #E8ECEE;
+    --charcoal: #2C3539;
+    --charcoal-light: #3D4A4F;
+    --green: #22C55E;
+    --green-bg: #DCFCE7;
+    --red: #EF4444;
+    --red-bg: #FEE2E2;
+    --dark: #1A1F21;
+    --gray-700: #555;
+    --gray-500: #888;
+    --gray-400: #AAA;
+    --gray-300: #D1D5DB;
+    --gray-200: #E5E7EB;
+    --gray-100: #F3F4F6;
+    --gray-50: #F9FAFB;
+    --white: #FFFFFF;
+    --card-shadow: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+    --radius: 12px;
+    --radius-sm: 8px;
+    --radius-lg: 16px;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: transparent;
+    color: var(--dark);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .container { max-width: 800px; margin: 0 auto; padding: 0 16px; }
+
+  /* Card */
+  .card {
+    background: var(--white);
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-lg);
+    padding: 32px;
+    margin-bottom: 20px;
+    box-shadow: var(--card-shadow);
+  }
+
+  .card-title {
+    font-size: 22px;
+    font-weight: 700;
+    margin-bottom: 4px;
+  }
+
+  .card-title span { color: var(--sand); }
+
+  .card-subtitle {
+    font-size: 14px;
+    color: var(--gray-500);
+    margin-bottom: 24px;
+  }
+
+  /* Form */
+  .form-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 12px;
+    margin-bottom: 20px;
+  }
+
+  .form-group label {
+    display: block;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--gray-500);
+    margin-bottom: 6px;
+  }
+
+  .form-group input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius-sm);
+    font-size: 15px;
+    font-family: inherit;
+    color: var(--dark);
+    background: var(--white);
+    transition: border-color 0.15s ease, box-shadow 0.15s ease;
+    outline: none;
+  }
+
+  .form-group input:focus {
+    border-color: var(--sand);
+    box-shadow: 0 0 0 3px var(--sand-light);
+  }
+
+  .form-group input::placeholder { color: var(--gray-400); }
+
+  .btn-submit {
+    width: 100%;
+    padding: 14px;
+    background: var(--sand);
+    color: var(--white);
+    border: none;
+    border-radius: 100px;
+    font-size: 15px;
+    font-family: inherit;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 8px rgba(196,168,130,0.3);
+  }
+
+  .btn-submit:hover {
+    background: var(--sand-hover);
+    box-shadow: 0 4px 16px rgba(196,168,130,0.4);
+    transform: translateY(-1px);
+  }
+
+  .btn-submit:active { transform: translateY(0); }
+
+  /* Stats row */
+  .stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+
+  .stat-card {
+    border: 1px solid var(--gray-200);
+    border-radius: var(--radius);
+    padding: 18px;
+    text-align: center;
+  }
+
+  .stat-card-label {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray-500);
+    margin-bottom: 4px;
+  }
+
+  .stat-card-value {
+    font-size: 28px;
+    font-weight: 700;
+    color: var(--dark);
+  }
+
+  .stat-card-sub {
+    font-size: 12px;
+    margin-top: 2px;
+  }
+
+  .stat-card-sub.green { color: var(--green); }
+  .stat-card-sub.sand { color: var(--sand); }
+
+  /* Table */
+  .table-wrap { overflow-x: auto; }
+
+  .att-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .att-table th {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--gray-500);
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 2px solid var(--gray-200);
+  }
+
+  .att-table td {
+    font-size: 14px;
+    padding: 12px;
+    border-bottom: 1px solid var(--gray-100);
+    color: var(--gray-700);
+  }
+
+  .att-table tr:last-child td { border-bottom: none; }
+
+  .att-table .total-cell {
+    font-weight: 700;
+    color: var(--dark);
+  }
+
+  .att-table .date-cell {
+    font-weight: 500;
+    color: var(--dark);
+  }
+
+  .change-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 600;
+  }
+
+  .change-badge.positive {
+    background: var(--green-bg);
+    color: #16A34A;
+  }
+
+  .change-badge.negative {
+    background: var(--red-bg);
+    color: #DC2626;
+  }
+
+  .change-badge.neutral {
+    background: var(--gray-100);
+    color: var(--gray-500);
+  }
+
+  .delete-btn {
+    background: none;
+    border: none;
+    color: var(--gray-400);
+    cursor: pointer;
+    font-size: 16px;
+    padding: 4px 8px;
+    border-radius: 4px;
+    transition: all 0.15s ease;
+  }
+
+  .delete-btn:hover {
+    color: var(--red);
+    background: var(--red-bg);
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 40px 20px;
+    color: var(--gray-400);
+    font-size: 14px;
+  }
+
+  .empty-state-icon {
+    font-size: 36px;
+    margin-bottom: 8px;
+    opacity: 0.5;
+  }
+
+  /* Toast */
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%) translateY(100px);
+    background: var(--charcoal);
+    color: var(--white);
+    padding: 12px 24px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: inherit;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.2);
+    z-index: 9999;
+    transition: transform 0.3s ease;
+    pointer-events: none;
+  }
+
+  .toast.show { transform: translateX(-50%) translateY(0); }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(12px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .row-enter { animation: fadeUp 0.3s ease; }
+
+  @media (max-width: 600px) {
+    .card { padding: 20px 16px; }
+    .form-grid { grid-template-columns: 1fr; }
+    .stats-row { grid-template-columns: 1fr; }
+    .att-table th, .att-table td { padding: 8px 6px; font-size: 13px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <!-- Entry Form -->
+  <div class="card">
+    <div class="card-title">Record <span>Attendance</span></div>
+    <div class="card-subtitle">Enter the date and headcount to add a new entry.</div>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Date</label>
+        <input type="date" id="input-date" />
+      </div>
+      <div class="form-group">
+        <label>Adults</label>
+        <input type="number" id="input-adults" placeholder="0" min="0" />
+      </div>
+      <div class="form-group">
+        <label>Children / Teens</label>
+        <input type="number" id="input-youth" placeholder="0" min="0" />
+      </div>
+    </div>
+    <button class="btn-submit" onclick="addEntry()">Submit Attendance →</button>
+  </div>
+
+  <!-- Data Card -->
+  <div class="card" id="data-card">
+    <div class="card-title">Attendance <span>History</span></div>
+    <div class="card-subtitle" id="data-subtitle">No entries yet — add your first one above.</div>
+
+    <div class="stats-row" id="stats-row" style="display:none;"></div>
+
+    <div class="table-wrap">
+      <table class="att-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            <th>Adults</th>
+            <th>Children/Teens</th>
+            <th>Total</th>
+            <th>vs Prev</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="table-body"></tbody>
+      </table>
+      <div class="empty-state" id="empty-state">
+        <div class="empty-state-icon">📋</div>
+        No attendance records yet.
+      </div>
+    </div>
+  </div>
+
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// === DATA STORE ===
+// Entries stored in-memory; persisted to a hidden textarea for iframe reload survival
+let entries = [];
+
+function saveEntries() {
+  try {
+    const el = document.getElementById('data-store');
+    if (!el) {
+      const ta = document.createElement('textarea');
+      ta.id = 'data-store';
+      ta.style.display = 'none';
+      document.body.appendChild(ta);
+    }
+    document.getElementById('data-store').value = JSON.stringify(entries);
+  } catch(e) {}
+}
+
+function loadEntries() {
+  try {
+    const el = document.getElementById('data-store');
+    if (el && el.value) {
+      entries = JSON.parse(el.value);
+    }
+  } catch(e) {}
+}
+
+// === TOAST ===
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// === ADD ENTRY ===
+function addEntry() {
+  const dateVal = document.getElementById('input-date').value;
+  const adultsVal = parseInt(document.getElementById('input-adults').value) || 0;
+  const youthVal = parseInt(document.getElementById('input-youth').value) || 0;
+
+  if (!dateVal) { showToast('Please select a date.'); return; }
+  if (adultsVal === 0 && youthVal === 0) { showToast('Enter at least one person.'); return; }
+
+  entries.push({
+    id: Date.now(),
+    date: dateVal,
+    adults: adultsVal,
+    youth: youthVal,
+    total: adultsVal + youthVal
+  });
+
+  // Sort by date descending (newest first)
+  entries.sort((a, b) => b.date.localeCompare(a.date));
+
+  saveEntries();
+  renderTable();
+
+  // Reset form
+  document.getElementById('input-adults').value = '';
+  document.getElementById('input-youth').value = '';
+  showToast('✓ Attendance recorded!');
+}
+
+// === DELETE ENTRY ===
+function deleteEntry(id) {
+  entries = entries.filter(e => e.id !== id);
+  saveEntries();
+  renderTable();
+  showToast('Entry removed.');
+}
+
+// === RENDER ===
+function renderTable() {
+  const tbody = document.getElementById('table-body');
+  const emptyEl = document.getElementById('empty-state');
+  const statsEl = document.getElementById('stats-row');
+  const subEl = document.getElementById('data-subtitle');
+
+  if (entries.length === 0) {
+    tbody.innerHTML = '';
+    emptyEl.style.display = 'block';
+    statsEl.style.display = 'none';
+    subEl.textContent = 'No entries yet — add your first one above.';
+    reportHeight();
+    return;
+  }
+
+  emptyEl.style.display = 'none';
+  statsEl.style.display = 'grid';
+  subEl.textContent = `${entries.length} entr${entries.length === 1 ? 'y' : 'ies'} recorded`;
+
+  // Stats: latest, average, total entries
+  const latest = entries[0];
+  const avg = Math.round(entries.reduce((s, e) => s + e.total, 0) / entries.length);
+  const highest = Math.max(...entries.map(e => e.total));
+
+  statsEl.innerHTML = `
+    <div class="stat-card">
+      <div class="stat-card-label">Latest Count</div>
+      <div class="stat-card-value">${latest.total}</div>
+      <div class="stat-card-sub sand">${formatDateShort(latest.date)}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-label">Average</div>
+      <div class="stat-card-value">${avg}</div>
+      <div class="stat-card-sub sand">${entries.length} week${entries.length === 1 ? '' : 's'}</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-card-label">Highest</div>
+      <div class="stat-card-value">${highest}</div>
+      <div class="stat-card-sub green">Record</div>
+    </div>
+  `;
+
+  // Table rows (sorted newest first, so "prev" for row i is row i+1)
+  let html = '';
+  for (let i = 0; i < entries.length; i++) {
+    const e = entries[i];
+    const prev = entries[i + 1]; // next row is the previous date
+
+    let changeBadge = '<span class="change-badge neutral">—</span>';
+    if (prev) {
+      const pctChange = ((e.total - prev.total) / prev.total) * 100;
+      const rounded = Math.round(Math.abs(pctChange));
+      if (pctChange > 0) {
+        changeBadge = `<span class="change-badge positive">▲ ${rounded}%</span>`;
+      } else if (pctChange < 0) {
+        changeBadge = `<span class="change-badge negative">▼ ${rounded}%</span>`;
+      } else {
+        changeBadge = `<span class="change-badge neutral">— 0%</span>`;
+      }
+    }
+
+    html += `
+      <tr class="row-enter">
+        <td class="date-cell">${formatDateDisplay(e.date)}</td>
+        <td>${e.adults}</td>
+        <td>${e.youth}</td>
+        <td class="total-cell">${e.total}</td>
+        <td>${changeBadge}</td>
+        <td><button class="delete-btn" onclick="deleteEntry(${e.id})" title="Delete">×</button></td>
+      </tr>
+    `;
+  }
+  tbody.innerHTML = html;
+  reportHeight();
+}
+
+// === HELPERS ===
+function formatDateDisplay(dateStr) {
+  // "2026-03-01" -> "Mar 1, 2026"
+  const [y, m, d] = dateStr.split('-');
+  const dt = new Date(+y, +m - 1, +d);
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+}
+
+function formatDateShort(dateStr) {
+  const [y, m, d] = dateStr.split('-');
+  const dt = new Date(+y, +m - 1, +d);
+  return dt.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+// === IFRAME AUTO-RESIZE ===
+function reportHeight() {
+  const height = document.documentElement.scrollHeight;
+  window.parent.postMessage({ type: 'resize-iframe', height: height }, '*');
+}
+
+window.addEventListener('load', () => {
+  // Set default date to today
+  const today = new Date();
+  const yyyy = today.getFullYear();
+  const mm = String(today.getMonth() + 1).padStart(2, '0');
+  const dd = String(today.getDate()).padStart(2, '0');
+  document.getElementById('input-date').value = `${yyyy}-${mm}-${dd}`;
+
+  loadEntries();
+  renderTable();
+  setTimeout(reportHeight, 100);
+});
+
+window.addEventListener('resize', reportHeight);
+new MutationObserver(reportHeight).observe(document.body, { childList: true, subtree: true, attributes: true });
+</script>
+</body>
+</html>
